@@ -41,12 +41,13 @@ export default function UsersPage() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">User Management</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{users?.length ?? 0} users</p>
+          <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Team directory</p>
+          <h1 className="mt-2 text-3xl font-semibold text-slate-900">User Management</h1>
+          <p className="mt-2 text-sm text-slate-500">{users?.length ?? 0} users across your support and engineering teams.</p>
         </div>
-        <button onClick={() => setShowForm(f => !f)} className="btn-primary">
+        <button onClick={() => setShowForm(f => !f)} className="btn-primary inline-flex items-center gap-2">
           {showForm ? <X size={15} /> : <Plus size={15} />}
           {showForm ? 'Cancel' : 'New User'}
         </button>

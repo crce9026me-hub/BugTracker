@@ -41,12 +41,16 @@ export default function CreateTicketPage() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
-      <Link to="/tickets" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-5">
+      <Link to="/tickets" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-5">
         <ArrowLeft size={15} /> Back to tickets
       </Link>
 
       <div className="card p-6">
-        <h1 className="text-lg font-bold text-gray-900 mb-6">Create New Ticket</h1>
+        <div className="mb-6">
+          <p className="text-xs uppercase tracking-[0.28em] text-sky-600">New issue</p>
+          <h1 className="mt-2 text-3xl font-semibold text-slate-900">Create New Ticket</h1>
+          <p className="mt-3 text-sm text-slate-500">Capture issue details and launch it into your Jira-inspired workflow.</p>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>

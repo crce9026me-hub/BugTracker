@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ticketsApi } from '../api'
@@ -28,115 +28,125 @@ export default function TicketsPage() {
   const tickets = data?.content ?? []
   const totalPages = data?.totalPages ?? 0
 
+  const groupedTickets = useMemo(() => {
+    const groups = STATUSES.reduce((acc, status) => ({ ...acc, [status]: [] }), {})
+    tickets.forEach(ticket => {
+      if (groups[ticket.currentStatus]) {
+        groups[ticket.currentStatus].push(ticket)
+      }
+    })
+    return groups
+  }, [tickets])
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Tickets</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{data?.totalElements ?? 0} tickets found</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Issue queue</p>
+          <h1 className="mt-2 text-3xl font-semibold text-slate-900">Tickets</h1>
+          <p className="mt-2 text-sm text-slate-500">A Jira-like board for issue tracking and team workflows.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap gap-3">
           <button
             onClick={() => setShowFilters(f => !f)}
-            className={clsx('btn-secondary', showFilters && 'bg-blue-50 border-blue-200 text-blue-700')}
+            className={clsx('btn-secondary inline-flex items-center gap-2', showFilters && 'bg-slate-100 border-slate-300 text-slate-900')}
           >
             <Filter size={15} /> Filters
           </button>
-          <Link to="/tickets/new" className="btn-primary">
+          <Link to="/tickets/new" className="btn-primary inline-flex items-center gap-2">
             <Plus size={15} /> New Ticket
           </Link>
         </div>
       </div>
 
       {showFilters && (
-        <div className="card p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
-            <select className="input text-sm" onChange={e => setFilter('status', e.target.value)}>
-              <option value="">All</option>
-              {STATUSES.map(s => <option key={s} value={s}>{statusConfig[s]?.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Priority</label>
-            <select className="input text-sm" onChange={e => setFilter('priority', e.target.value)}>
-              <option value="">All</option>
-              {PRIORITIES.map(p => <option key={p} value={p}>{priorityConfig[p]?.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Support Level</label>
-            <select className="input text-sm" onChange={e => setFilter('supportLevel', e.target.value)}>
-              <option value="">All</option>
-              {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">From Date</label>
-            <input type="date" className="input text-sm"
-              onChange={e => setFilter('fromDate', e.target.value ? e.target.value + 'T00:00:00' : '')} />
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm mb-6">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-2">Status</label>
+              <select className="input text-sm" onChange={e => setFilter('status', e.target.value)}>
+                <option value="">All</option>
+                {STATUSES.map(s => <option key={s} value={s}>{statusConfig[s]?.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-2">Priority</label>
+              <select className="input text-sm" onChange={e => setFilter('priority', e.target.value)}>
+                <option value="">All</option>
+                {PRIORITIES.map(p => <option key={p} value={p}>{priorityConfig[p]?.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-2">Support Level</label>
+              <select className="input text-sm" onChange={e => setFilter('supportLevel', e.target.value)}>
+                <option value="">All</option>
+                {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-2">From Date</label>
+              <input type="date" className="input text-sm" onChange={e => setFilter('fromDate', e.target.value ? e.target.value + 'T00:00:00' : '')} />
+            </div>
           </div>
         </div>
       )}
 
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
-                {['Ticket ID', 'Project', 'Issue', 'Priority', 'Level', 'Assigned To', 'Status', 'Resolution', 'Created'].map(h => (
-                  <th key={h} className="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {isLoading && (
-                <tr><td colSpan={9} className="text-center py-10 text-gray-400">Loading...</td></tr>
-              )}
-              {!isLoading && tickets.length === 0 && (
-                <tr><td colSpan={9} className="text-center py-10 text-gray-400">No tickets found</td></tr>
-              )}
-              {tickets.map(ticket => (
-                <tr key={ticket.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <Link to={`/tickets/${ticket.id}`} className="font-mono text-blue-600 hover:text-blue-700 font-medium text-xs">
-                      {ticket.ticketId}
+      <div className="rounded-[1.75rem] bg-slate-50 p-4 shadow-sm overflow-x-auto">
+        <div className="min-w-[1200px] grid gap-4 md:grid-cols-5">
+          {STATUSES.map(status => (
+            <div key={status} className="rounded-[1.5rem] bg-white border border-slate-200 p-4 shadow-sm">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">{statusConfig[status]?.label}</p>
+                  <p className="mt-1 text-xs text-slate-500">{groupedTickets[status]?.length ?? 0} issues</p>
+                </div>
+                <span className={statusConfig[status]?.className}>{statusConfig[status]?.label}</span>
+              </div>
+              <div className="space-y-3">
+                {groupedTickets[status]?.length > 0 ? (
+                  groupedTickets[status].map(ticket => (
+                    <Link
+                      key={ticket.id}
+                      to={`/tickets/${ticket.id}`}
+                      className="block rounded-3xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300 hover:bg-white"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-xs text-slate-500">{ticket.ticketId}</span>
+                        <span className={priorityConfig[ticket.priority]?.className}>{priorityConfig[ticket.priority]?.label}</span>
+                      </div>
+                      <p className="mt-3 text-sm font-semibold text-slate-900 leading-snug">{ticket.issueDescription}</p>
+                      <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                        <span className={supportLevelConfig[ticket.supportLevel]?.className}>{supportLevelConfig[ticket.supportLevel]?.label}</span>
+                        <span className="badge bg-slate-100 text-slate-700">{ticket.project?.projectCode ?? 'No project'}</span>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                        <span>{ticket.assignedTo?.name ?? 'Unassigned'}</span>
+                        <span>{formatDate(ticket.createdAt)}</span>
+                      </div>
                     </Link>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 font-mono text-xs">{ticket.project?.projectCode}</td>
-                  <td className="px-4 py-3 text-gray-700 max-w-xs truncate">{ticket.issueDescription}</td>
-                  <td className="px-4 py-3">
-                    <span className={priorityConfig[ticket.priority]?.className}>{priorityConfig[ticket.priority]?.label}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={supportLevelConfig[ticket.supportLevel]?.className}>{ticket.supportLevel}</span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{ticket.assignedTo?.name ?? <span className="text-gray-400 italic text-xs">Unassigned</span>}</td>
-                  <td className="px-4 py-3">
-                    <span className={statusConfig[ticket.currentStatus]?.className}>{statusConfig[ticket.currentStatus]?.label}</span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">{formatResolutionTime(ticket.resolutionTime)}</td>
-                  <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{formatDate(ticket.createdAt)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
-            <p className="text-sm text-gray-500">Page {page + 1} of {totalPages}</p>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setPage(p => p - 1)} disabled={page === 0} className="btn-secondary py-1.5 px-2.5">
-                <ChevronLeft size={16} />
-              </button>
-              <button onClick={() => setPage(p => p + 1)} disabled={page >= totalPages - 1} className="btn-secondary py-1.5 px-2.5">
-                <ChevronRight size={16} />
-              </button>
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-500">No tickets in this column</p>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <p className="text-sm text-slate-500">Page {page + 1} of {totalPages}</p>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setPage(p => p - 1)} disabled={page === 0} className="btn-secondary py-1.5 px-3">
+              <ChevronLeft size={16} />
+            </button>
+            <button onClick={() => setPage(p => p + 1)} disabled={page >= totalPages - 1} className="btn-secondary py-1.5 px-3">
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -52,12 +52,33 @@ export default function TicketDetailPage() {
   const nextStatuses = VALID_TRANSITIONS[ticket.currentStatus] ?? []
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <Link to="/tickets" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-5">
-        <ArrowLeft size={15} /> Back to tickets
-      </Link>
+    <div className="p-6 max-w-6xl mx-auto">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Link to="/tickets" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700">
+          <ArrowLeft size={15} /> Back to tickets
+        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={statusConfig[ticket.currentStatus]?.className}>{statusConfig[ticket.currentStatus]?.label}</span>
+          <span className={priorityConfig[ticket.priority]?.className}>{priorityConfig[ticket.priority]?.label}</span>
+          <span className={supportLevelConfig[ticket.supportLevel]?.className}>{supportLevelConfig[ticket.supportLevel]?.label}</span>
+        </div>
+      </div>
 
-      <div className="flex items-start justify-between mb-6">
+      <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm mb-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl">
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-500 mb-2">Issue detail</p>
+            <h1 className="text-3xl font-semibold text-slate-900">{ticket.ticketId}: {ticket.issueDescription}</h1>
+            <p className="mt-3 text-sm text-slate-500">{ticket.project?.projectName} ({ticket.project?.projectCode}) • Created {formatDate(ticket.createdAt)}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="rounded-3xl bg-slate-100 px-4 py-2 text-sm text-slate-700">Created by {ticket.createdBy?.name}</span>
+            <span className="rounded-3xl bg-slate-100 px-4 py-2 text-sm text-slate-700">Assigned to {ticket.assignedTo?.name ?? 'Unassigned'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-5">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <span className="font-mono text-blue-600 font-bold text-lg">{ticket.ticketId}</span>
