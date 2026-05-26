@@ -6,6 +6,9 @@ import { priorityConfig, statusConfig, supportLevelConfig, formatDate, formatRes
 import { ArrowLeft, CheckCircle } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 import toast from 'react-hot-toast'
+import SLACountdownTimer from '../components/sla/SLACountdownTimer'
+import SLADetailsPanel from '../components/sla/SLADetailsPanel'
+import SLABreachBadge from '../components/sla/SLABreachBadge'
 
 export default function TicketDetailPage() {
   const { id } = useParams()
@@ -164,6 +167,18 @@ export default function TicketDetailPage() {
               </div>
             )}
           </div>
+
+          {/* SLA Section */}
+          <div className="card p-4">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Service Level Agreements</h3>
+            <div className="space-y-3">
+              <SLACountdownTimer ticketId={id} slaType="RESPONSE" />
+              <SLACountdownTimer ticketId={id} slaType="RESOLUTION" />
+              <SLABreachBadge ticketId={id} />
+            </div>
+          </div>
+
+          <SLADetailsPanel ticketId={id} />
 
           {nextStatuses.length > 0 && (
             <div className="card p-4">

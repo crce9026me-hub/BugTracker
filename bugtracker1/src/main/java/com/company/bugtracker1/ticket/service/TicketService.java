@@ -16,6 +16,8 @@ import com.company.bugtracker1.exception.ForbiddenException;
 import com.company.bugtracker1.exception.ResourceNotFoundException;
 import com.company.bugtracker1.project.entity.Project;
 import com.company.bugtracker1.project.repository.ProjectRepository;
+import com.company.bugtracker1.sla.entity.SLAType;
+import com.company.bugtracker1.sla.service.SLATrackingService;
 import com.company.bugtracker1.ticket.dto.TicketDto;
 import com.company.bugtracker1.ticket.entity.Ticket;
 import com.company.bugtracker1.ticket.entity.TicketStatus;
@@ -38,6 +40,7 @@ public class TicketService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final TicketMapper ticketMapper;
+    private final SLATrackingService slaTrackingService;
 
     @Transactional
     public TicketDto.TicketResponse createTicket(TicketDto.CreateTicketRequest request) {
@@ -63,6 +66,10 @@ public class TicketService {
                 .build();
 
         Ticket saved = ticketRepository.save(ticket);
+        
+        // Initialize SLAs for the ticket
+        slaTrackingService.initializeSLAs(saved.getId());
+        
         log.info("Created ticket: {} by user: {}", saved.getTicketId(), currentUser.getEmail());
         return ticketMapper.toResponse(saved);
     }
@@ -117,6 +124,9 @@ public class TicketService {
 
         if (ticket.getAssignedTo() == null) {
             ticket.setResponseDateTime(LocalDateTime.now());
+            
+            // Stop RESPONSE SLA when first response is given
+            slaTrackingService.stopSLA(ticket.getId(), SLAType.RESPONSE);
         }
 
         ticket.setAssignedTo(assignee);
@@ -140,6 +150,17 @@ public class TicketService {
         if (newStatus == TicketStatus.RESOLVED && ticket.getResolutionTime() == null) {
             long minutes = ChronoUnit.MINUTES.between(ticket.getGenerationDate(), LocalDateTime.now());
             ticket.setResolutionTime(minutes);
+            
+            // Stop RESOLUTION SLA when ticket is resolved
+            slaTrackingService.stopSLA(ticket.getId(), SLAType.RESOLUTION);
+        }
+
+        if (newStatus == TicketStatus.CLOSED && ticket.getResolutionTime() == null) {
+            long minutes = ChronoUnit.MINUTES.between(ticket.getGenerationDate(), LocalDateTime.now());
+            ticket.setResolutionTime(minutes);
+            
+            // Stop RESOLUTION SLA when ticket is closed
+            slaTrackingService.stopSLA(ticket.getId(), SLAType.RESOLUTION);
         }
 
         ticket.setCurrentStatus(newStatus);

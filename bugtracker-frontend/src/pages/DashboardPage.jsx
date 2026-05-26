@@ -5,6 +5,7 @@ import { ticketsApi, projectsApi } from '../api'
 import { priorityConfig, statusConfig, formatDate, formatResolutionTime } from '../utils/helpers'
 import { Ticket, FolderKanban, AlertCircle, Plus } from 'lucide-react'
 import useAuthStore from '../store/authStore'
+import SLAMetricsDashboard from '../components/sla/SLAMetricsDashboard'
 
 const STATUS_BOARD = ['OPEN', 'IN_PROGRESS', 'WAITING_FOR_CUSTOMER', 'RESOLVED']
 
@@ -78,6 +79,9 @@ export default function DashboardPage() {
         <StatCard icon={AlertCircle} label="Critical" value={criticalData?.totalElements} color="bg-red-600" />
         <StatCard icon={FolderKanban} label="Projects" value={projects?.length} color="bg-violet-600" />
       </div>
+
+      {/* SLA Metrics Dashboard */}
+      <SLAMetricsDashboard mb="mb-8" />
 
       <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6 shadow-sm mb-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
